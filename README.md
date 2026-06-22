@@ -38,6 +38,23 @@ docker compose up --build
 curl "http://localhost:8080/search?origin=MOW&destination=BKK&depart=2026-04-20"
 ```
 
+## Фронтенд (web/)
+
+React + Vite + TypeScript. Дизайн карточек — устоявшиеся паттерны flight-search
+(Google Flights / Skyscanner): крупная цена, таймлайн маршрута, пилюли пересадок,
+бейджи авиакомпаний. Само-стыковочные варианты помечаются («Само-стыковка»,
+«Нет у агрегаторов») и сопровождаются предупреждением о раздельных билетах.
+
+```bash
+# 1) бэкенд
+go run ./cmd/api
+# 2) фронт (Vite dev проксирует /api → :8080)
+cd web && npm install && npm run dev   # http://localhost:5173
+```
+
+Прод-сборка: `cd web && npm run build`. База API настраивается через `VITE_API_BASE`
+(по умолчанию `/api`, в dev — прокси на бэкенд).
+
 ## API
 
 `GET /health` → `{"status":"ok"}`
