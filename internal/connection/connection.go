@@ -1,15 +1,13 @@
-// Package connection assesses whether a layover gives enough time to make the
-// next flight (Minimum Connection Time). Defaults are indicative/typical values
-// averaged across carriers; a self-transfer (separate tickets) needs more time
-// because the traveller must collect and re-check baggage and re-clear security.
+// Package connection checks whether a layover leaves enough time for the next
+// flight. Self-transfer needs more (re-check bags, security again).
 package connection
 
 import "flightmeta/internal/offer"
 
-// Indicative MCT defaults (minutes), international transfer.
+// Minimum connection time (minutes), international.
 const (
-	OfficialMinMinutes     = 90  // single ticket, protected connection
-	SelfTransferMinMinutes = 150 // separate tickets: re-check bags + security
+	OfficialMinMinutes     = 90
+	SelfTransferMinMinutes = 150
 )
 
 // Risk levels written onto offer.Layover.Risk.
@@ -27,9 +25,9 @@ func RequiredMinutes(selfTransfer bool) int {
 	return OfficialMinMinutes
 }
 
-// Enrich sets Risk on each layover by comparing its duration to the required
-// MCT. A self-transfer through a country that requires a transit visa forces a
-// landside exit the traveller can't legally make, so it is infeasible.
+// Enrich sets Risk on each layover from its duration vs the required MCT.
+// Self-transfer through a country that needs a transit visa is infeasible
+// (you'd have to clear immigration to switch tickets).
 func Enrich(offers []offer.Offer) {
 	for i := range offers {
 		for j := range offers[i].Layovers {

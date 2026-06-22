@@ -1,7 +1,5 @@
-// Package combiner builds itineraries from per-leg quotes. It produces a direct
-// offer plus self-transfer combinations across a hub list — the routes that
-// single-ticket aggregators don't surface. It implements sources.Adapter so it
-// plugs into the search orchestrator like any other source.
+// Package combiner builds routes from per-leg quotes: a direct offer plus
+// self-transfer combos through a list of hubs. Implements sources.Adapter.
 package combiner
 
 import (
@@ -12,15 +10,14 @@ import (
 	"flightmeta/internal/sources"
 )
 
-// Hub is a connecting airport the combiner tries, with the layover it schedules
-// there (minutes). Layover length drives the connection-safety assessment.
+// Hub is a connecting airport to try, with the layover (minutes) scheduled there.
 type Hub struct {
 	Code       string
 	LayoverMin int
 }
 
-// DefaultHubs is a small curated set of common connecting points. The layover
-// values give a spread of safe / risky connections for demonstration.
+// DefaultHubs — common connecting points. Layover values give a mix of
+// safe/risky connections.
 var DefaultHubs = []Hub{
 	{"IST", 180},
 	{"DXB", 200},
@@ -29,11 +26,10 @@ var DefaultHubs = []Hub{
 	{"PEK", 240},
 	{"TAS", 160},
 	{"DEL", 190},
-	{"BEG", 100}, // tight: exercises the "risky" assessment
+	{"BEG", 100}, // tight on purpose
 }
 
-// directPremium marks up the direct fare so self-transfer combos can realistically
-// undercut it (the product's value proposition).
+// directPremium marks up the direct fare a bit so combos can undercut it.
 const directPremium = 130 // percent
 
 type Combiner struct {

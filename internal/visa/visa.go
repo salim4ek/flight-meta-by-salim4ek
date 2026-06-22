@@ -1,8 +1,6 @@
-// Package visa resolves transit-visa status for a traveller's passport at each
-// layover. Data is INDICATIVE (seeded by hand, see data/visa_rules.json) and
-// must not be treated as an authoritative source — the disclaimer is surfaced
-// to the user. A real feed (Timatic/sherpa) can replace the seed later behind
-// the same Resolver API.
+// Package visa works out transit-visa status per passport at each layover.
+// Data is hand-seeded and indicative (see data/visa_rules.json), not official —
+// hence the disclaimer. A real feed (Timatic/sherpa) can drop in behind Resolver.
 package visa
 
 import (
@@ -27,9 +25,8 @@ const (
 	Unknown      Status = "unknown"
 )
 
-// Rule is a single transit rule. SelfTransferStatus, when set, overrides Status
-// for self-transfer layovers (separate tickets usually force a landside exit,
-// where airside-only exemptions no longer apply).
+// Rule is one transit rule. SelfTransferStatus, if set, overrides Status for
+// self-transfer layovers (you exit landside, so airside-only rules don't help).
 type Rule struct {
 	Status             Status `json:"status"`
 	SelfTransferStatus Status `json:"selfTransferStatus,omitempty"`
