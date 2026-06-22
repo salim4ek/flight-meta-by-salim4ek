@@ -1,48 +1,103 @@
-import { useState } from 'react'
-import { search, type SearchParams, type SearchResult } from './api'
+import { useEffect, useState } from 'react'
+import {
+  search,
+  calendar,
+  type SearchParams,
+  type SearchResult,
+  type CalendarResult,
+} from './api'
 import { SearchForm } from './components/SearchForm'
 import { Results } from './components/Results'
+import { Calendar } from './components/Calendar'
+import { SettingsPanel } from './components/Settings'
+import { ConsentBanner } from './components/ConsentBanner'
+import { LegalPage } from './components/Legal'
+import { Footer } from './components/Footer'
+import { useSettings } from './settings'
+
+const CAL_WINDOW = 3
 
 export default function App() {
+  const [settings, update] = useSettings()
+  const [showSettings, setShowSettings] = useState(false)
+
   const [result, setResult] = useState<SearchResult | null>(null)
+  const [cal, setCal] = useState<CalendarResult | null>(null)
+  const [lastParams, setLastParams] = useState<SearchParams | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSearch(p: SearchParams) {
+  const [route, setRoute] = useState(() => window.location.hash)
+  useEffect(() => {
+    const onHash = () => setRoute(window.location.hash)
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  async function runSearch(p: SearchParams) {
+    setLastParams(p)
     setLoading(true)
     setError(null)
     try {
-      setResult(await search(p))
+      const [r, c] = await Promise.all([search(p), calendar(p, CAL_WINDOW)])
+      setResult(r)
+      setCal(c)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось выполнить поиск')
       setResult(null)
+      setCal(null)
     } finally {
       setLoading(false)
     }
   }
 
+  function pickDate(date: string) {
+    if (lastParams) void runSearch({ ...lastParams, depart: date })
+  }
+
+  if (route.startsWith('#/legal')) {
+    return (
+      <div className="app">
+        <LegalPage route={route} />
+        <Footer />
+      </div>
+    )
+  }
+
   return (
     <div className="app">
       <header className="hero">
-        <h1 className="hero__title">flight-meta</h1>
+        <div className="hero__bar">
+          <h1 className="hero__title">flight-meta</h1>
+          <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Настройки">
+            ⚙
+          </button>
+        </div>
         <p className="hero__sub">
-          Находим маршруты из отдельных билетов, которых нет у агрегаторов — через любой хаб,
-          с учётом транзитных виз и безопасного времени стыковки. Без наценки: показываем и ведём покупать напрямую.
+          Маршруты из отдельных билетов, которых нет у агрегаторов — через любой хаб, с учётом
+          транзитных виз и безопасного времени стыковки. Без наценки: показываем и ведём покупать
+          напрямую.
         </p>
       </header>
 
-      <SearchForm onSearch={handleSearch} loading={loading} />
+      <SearchForm onSearch={runSearch} loading={loading} />
 
       {error && <p className="error">{error}</p>}
+      {cal && lastParams && <Calendar data={cal} selected={lastParams.depart} onPick={pickDate} />}
       {result && <Results result={result} />}
       {!result && !error && (
         <p className="hint">
-          Введите маршрут и нажмите «Найти». Данные сейчас демонстрационные (mock-источник) —
-          реальные источники (Kiwi и др.) подключаются в следующих фазах.
+          Введите маршрут и нажмите «Найти». Данные сейчас демонстрационные (свой комбайнер на
+          mock-ценах) — реальный источник цен подключается следующим.
         </p>
       )}
 
-      <footer className="foot">Фаза 2 · UI на mock-бэкенде</footer>
+      <Footer />
+
+      {showSettings && (
+        <SettingsPanel settings={settings} update={update} onClose={() => setShowSettings(false)} />
+      )}
+      <ConsentBanner />
     </div>
   )
 }

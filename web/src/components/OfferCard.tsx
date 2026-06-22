@@ -1,4 +1,4 @@
-import type { Offer, VisaStatus } from '../api'
+import type { ConnRisk, Offer, VisaStatus } from '../api'
 import {
   formatPrice,
   formatTimeUTC,
@@ -17,6 +17,19 @@ function visaBadge(status?: VisaStatus): { kind: string; label: string } | null 
       return { kind: 'need', label: 'Нужна транзитная виза' }
     case 'unknown':
       return { kind: 'unknown', label: 'Виза: уточните' }
+    default:
+      return null
+  }
+}
+
+function riskBadge(risk?: ConnRisk): { kind: string; label: string } | null {
+  switch (risk) {
+    case 'safe':
+      return { kind: 'ok', label: 'Стыковка ок' }
+    case 'risky':
+      return { kind: 'twov', label: 'Рискованная стыковка' }
+    case 'infeasible':
+      return { kind: 'need', label: 'Стыковка невозможна' }
     default:
       return null
   }
@@ -82,12 +95,14 @@ export function OfferCard({ offer }: { offer: Offer }) {
           <ul className="layovers">
             {offer.layovers.map((l, i) => {
               const v = visaBadge(l.visaStatus)
+              const rk = riskBadge(l.risk)
               return (
                 <li key={i} className="layover">
                   <div className="layover__top">
                     <span className="layover__air">{l.airport}</span>
                     <span className="layover__dur">стыковка {humanDurationNs(l.durationNs)}</span>
                     {l.selfTransfer && <span className="layover__tag">смена билета</span>}
+                    {rk && <span className={`visa visa--${rk.kind}`}>{rk.label}</span>}
                     {v && <span className={`visa visa--${v.kind}`}>{v.label}</span>}
                   </div>
                   {l.transitNote && <div className="layover__note">{l.transitNote}</div>}

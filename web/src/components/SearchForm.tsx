@@ -26,6 +26,7 @@ export function SearchForm({
   const [excludeAirlines, setExcludeAirlines] = useState('')
   const [selfTransfer, setSelfTransfer] = useState(true)
   const [visaFreeTransit, setVisaFreeTransit] = useState(false)
+  const [hideInfeasible, setHideInfeasible] = useState(false)
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -41,6 +42,7 @@ export function SearchForm({
       excludeAirlines: excludeAirlines.trim() || undefined,
       selfTransfer,
       visaFreeTransit,
+      hideInfeasible,
     })
   }
 
@@ -105,6 +107,14 @@ export function SearchForm({
             onChange={(e) => setVisaFreeTransit(e.target.checked)}
           />
           <span>Только безвиз-транзит</span>
+        </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={hideInfeasible}
+            onChange={(e) => setHideInfeasible(e.target.checked)}
+          />
+          <span>Без невозможных стыковок</span>
         </label>
         <button className="btn btn--go" type="submit" disabled={loading}>
           {loading ? 'Ищем…' : 'Найти'}

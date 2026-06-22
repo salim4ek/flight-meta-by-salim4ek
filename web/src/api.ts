@@ -13,12 +13,13 @@ export interface Segment {
 }
 
 export type VisaStatus = 'no_visa' | 'twov' | 'visa_required' | 'unknown'
+export type ConnRisk = 'safe' | 'risky' | 'infeasible'
 
 export interface Layover {
   airport: string
   durationNs: number // Go time.Duration marshals as int64 nanoseconds
   selfTransfer: boolean
-  risk?: string
+  risk?: ConnRisk
   visaStatus?: VisaStatus
   transitNote?: string
 }
@@ -64,11 +65,24 @@ export interface SearchParams {
   excludeAirlines?: string
   selfTransfer?: boolean
   visaFreeTransit?: boolean
+  hideInfeasible?: boolean
+}
+
+export interface CalendarDay {
+  date: string // YYYY-MM-DD
+  priceMinor: number
+  currency: string
+  hasOffers: boolean
+  cheapest: boolean
+}
+
+export interface CalendarResult {
+  days: CalendarDay[]
 }
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api'
 
-export async function search(p: SearchParams, signal?: AbortSignal): Promise<SearchResult> {
+function buildParams(p: SearchParams): URLSearchParams {
   const q = new URLSearchParams()
   q.set('origin', p.origin)
   q.set('destination', p.destination)
@@ -82,8 +96,12 @@ export async function search(p: SearchParams, signal?: AbortSignal): Promise<Sea
   if (p.excludeAirlines) q.set('exclude_airlines', p.excludeAirlines)
   if (p.selfTransfer === false) q.set('self_transfer', 'false')
   if (p.visaFreeTransit) q.set('visa_free_transit', 'true')
+  if (p.hideInfeasible) q.set('hide_infeasible', 'true')
+  return q
+}
 
-  const res = await fetch(`${API_BASE}/search?${q.toString()}`, { signal })
+async function getJSON<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { signal })
   if (!res.ok) {
     let msg = `Ошибка ${res.status}`
     try {
@@ -94,5 +112,15 @@ export async function search(p: SearchParams, signal?: AbortSignal): Promise<Sea
     }
     throw new Error(msg)
   }
-  return (await res.json()) as SearchResult
+  return (await res.json()) as T
+}
+
+export function search(p: SearchParams, signal?: AbortSignal): Promise<SearchResult> {
+  return getJSON<SearchResult>(`/search?${buildParams(p).toString()}`, signal)
+}
+
+export function calendar(p: SearchParams, window: number, signal?: AbortSignal): Promise<CalendarResult> {
+  const q = buildParams(p)
+  q.set('window', String(window))
+  return getJSON<CalendarResult>(`/calendar?${q.toString()}`, signal)
 }
