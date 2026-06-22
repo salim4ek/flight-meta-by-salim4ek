@@ -59,6 +59,28 @@ func TestApplySortsByPriceAndFilters(t *testing.T) {
 	}
 }
 
+func TestVisaFreeTransitFilter(t *testing.T) {
+	withVisa := func(id, status string) offer.Offer {
+		return offer.Offer{
+			ID:       id,
+			Segments: []offer.Segment{{}, {}}, // 1 stop
+			Layovers: []offer.Layover{{VisaStatus: status}},
+		}
+	}
+	in := []offer.Offer{
+		withVisa("free", "no_visa"),
+		withVisa("twov", "twov"),
+		withVisa("need", "visa_required"),
+	}
+	out := Apply(in, sources.Filters{AllowSelfTransfer: true, OnlyVisaFreeTransit: true})
+	if hasID(out, "need") {
+		t.Fatalf("visa_required offer should be dropped: %v", ids(out))
+	}
+	if !hasID(out, "free") || !hasID(out, "twov") {
+		t.Fatalf("no_visa/twov offers should be kept: %v", ids(out))
+	}
+}
+
 func ids(os []offer.Offer) []string {
 	r := make([]string, 0, len(os))
 	for _, o := range os {

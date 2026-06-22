@@ -16,6 +16,7 @@ import (
 	"flightmeta/internal/search"
 	"flightmeta/internal/sources"
 	"flightmeta/internal/sources/mock"
+	"flightmeta/internal/visa"
 )
 
 func main() {
@@ -33,7 +34,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	orch := search.New(log, cfg.SourceTimeout, srcs...)
+	resolver, err := visa.Load()
+	if err != nil {
+		log.Error("failed to load transit-visa data", "err", err)
+		os.Exit(1)
+	}
+
+	orch := search.New(log, cfg.SourceTimeout, resolver, srcs...)
 	handler := httpapi.New(orch, log, cfg.CORSOrigin)
 
 	srv := &http.Server{

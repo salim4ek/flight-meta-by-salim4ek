@@ -313,19 +313,22 @@ body {
   margin: 12px 0 0;
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 6px;
 }
 .layover {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
   font-size: 12px;
   color: var(--muted);
   background: #f7f9fc;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 3px 9px;
+  border-radius: 10px;
+  padding: 7px 10px;
+}
+.layover__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 .layover__air {
   font-weight: 800;
@@ -336,7 +339,43 @@ body {
   font-weight: 700;
 }
 .layover__note {
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+/* Transit-visa badges */
+.visa {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.visa--ok {
+  background: color-mix(in srgb, var(--official) 14%, #fff);
   color: var(--official);
+}
+.visa--twov {
+  background: color-mix(in srgb, var(--self) 16%, #fff);
+  color: var(--self);
+}
+.visa--need {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.visa--unknown {
+  background: #eef2f8;
+  color: var(--muted);
+}
+
+.disclaimer {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  background: #f7f9fc;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
 }
 
 .warn {

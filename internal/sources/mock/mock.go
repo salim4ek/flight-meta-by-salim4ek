@@ -89,7 +89,45 @@ func (a *Adapter) Search(ctx context.Context, q sources.Query) ([]offer.Offer, e
 		Carriers: []string{"FZ", "EK"},
 	}
 
-	return []offer.Offer{direct, oneStop, selfTransfer}, nil
+	// 4) Self-transfer via China — demonstrates a conditional TWOV transit-visa
+	//    badge (China visa-free transit) for an RU/CIS passport.
+	hub3 := "PEK"
+	selfTransferCN := offer.Offer{
+		ID:         "mock-self-transfer-cn",
+		Source:     a.Name(),
+		Connection: offer.SelfTransfer,
+		Currency:   cur,
+		PriceMinor: 2690000,
+		DeepLink:   "https://example-partner.test/book/mock-self-transfer-cn",
+		Unique:     true,
+		Segments: []offer.Segment{
+			seg(q.Origin, hub3, dep.Add(7*time.Hour), dep.Add(16*time.Hour), "U6", "1001"),
+			seg(hub3, q.Destination, dep.Add(20*time.Hour), dep.Add(26*time.Hour), "CA", "979"),
+		},
+		Layovers: []offer.Layover{{Airport: hub3, Duration: 4 * time.Hour, SelfTransfer: true}},
+		Carriers: []string{"U6", "CA"},
+	}
+
+	// 5) Self-transfer via India — demonstrates a "transit visa required" badge,
+	//    which the "visa-free transit only" filter should drop.
+	hub4 := "DEL"
+	selfTransferIN := offer.Offer{
+		ID:         "mock-self-transfer-in",
+		Source:     a.Name(),
+		Connection: offer.SelfTransfer,
+		Currency:   cur,
+		PriceMinor: 3350000,
+		DeepLink:   "https://example-partner.test/book/mock-self-transfer-in",
+		Unique:     true,
+		Segments: []offer.Segment{
+			seg(q.Origin, hub4, dep.Add(9*time.Hour), dep.Add(15*time.Hour), "6E", "44"),
+			seg(hub4, q.Destination, dep.Add(19*time.Hour), dep.Add(24*time.Hour), "6E", "1071"),
+		},
+		Layovers: []offer.Layover{{Airport: hub4, Duration: 4 * time.Hour, SelfTransfer: true}},
+		Carriers: []string{"6E"},
+	}
+
+	return []offer.Offer{direct, oneStop, selfTransfer, selfTransferCN, selfTransferIN}, nil
 }
 
 func seg(from, to string, dep, arr time.Time, carrier, flight string) offer.Segment {

@@ -21,6 +21,9 @@ func Apply(offers []offer.Offer, f sources.Filters) []offer.Offer {
 		if o.Connection == offer.SelfTransfer && !f.AllowSelfTransfer {
 			continue
 		}
+		if f.OnlyVisaFreeTransit && needsTransitVisa(o) {
+			continue
+		}
 		if !passAirlines(o, f.IncludeAirlines, f.ExcludeAirlines) {
 			continue
 		}
@@ -30,6 +33,17 @@ func Apply(offers []offer.Offer, f sources.Filters) []offer.Offer {
 		return out[i].PriceMinor < out[j].PriceMinor
 	})
 	return out
+}
+
+// needsTransitVisa reports whether any layover definitely requires a transit
+// visa for the traveller (per the visa module's enrichment).
+func needsTransitVisa(o offer.Offer) bool {
+	for _, l := range o.Layovers {
+		if l.VisaStatus == "visa_required" {
+			return true
+		}
+	}
+	return false
 }
 
 func passStops(o offer.Offer, mode sources.StopsMode) bool {

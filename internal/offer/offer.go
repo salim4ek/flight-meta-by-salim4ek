@@ -34,10 +34,12 @@ type Layover struct {
 	Airport      string        `json:"airport"`
 	Duration     time.Duration `json:"durationNs"`
 	SelfTransfer bool          `json:"selfTransfer"` // separate tickets across this point
-	// Risk and TransitNote are filled by the connection and visa modules in
-	// later phases; sources leave them zero-valued.
+	// Risk is filled by the connection module (later phase); sources leave it
+	// zero-valued. VisaStatus and TransitNote are filled by the visa module
+	// based on the traveller's passport.
 	Risk        string `json:"risk,omitempty"`        // "", safe, risky, infeasible
-	TransitNote string `json:"transitNote,omitempty"` // e.g. visa-free transit note
+	VisaStatus  string `json:"visaStatus,omitempty"`  // no_visa, twov, visa_required, unknown
+	TransitNote string `json:"transitNote,omitempty"` // human-readable transit-visa note
 }
 
 // Offer is one bookable (or redirectable) travel option.

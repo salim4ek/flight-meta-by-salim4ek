@@ -25,6 +25,10 @@ type Filters struct {
 	IncludeAirlines   []string // if non-empty, keep only offers using these carriers
 	ExcludeAirlines   []string
 	AllowSelfTransfer bool
+	// OnlyVisaFreeTransit drops offers that have any layover where the
+	// traveller's passport definitely needs a transit visa (VisaStatus ==
+	// "visa_required"). Requires the visa module to have enriched the offers.
+	OnlyVisaFreeTransit bool
 }
 
 // Query is a single search request in source-agnostic form.

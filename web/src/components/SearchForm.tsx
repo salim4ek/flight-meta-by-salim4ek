@@ -25,6 +25,7 @@ export function SearchForm({
   const [airlines, setAirlines] = useState('')
   const [excludeAirlines, setExcludeAirlines] = useState('')
   const [selfTransfer, setSelfTransfer] = useState(true)
+  const [visaFreeTransit, setVisaFreeTransit] = useState(false)
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -39,6 +40,7 @@ export function SearchForm({
       airlines: airlines.trim() || undefined,
       excludeAirlines: excludeAirlines.trim() || undefined,
       selfTransfer,
+      visaFreeTransit,
     })
   }
 
@@ -95,6 +97,14 @@ export function SearchForm({
         <label className="check">
           <input type="checkbox" checked={selfTransfer} onChange={(e) => setSelfTransfer(e.target.checked)} />
           <span>Само-стыковка</span>
+        </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={visaFreeTransit}
+            onChange={(e) => setVisaFreeTransit(e.target.checked)}
+          />
+          <span>Только безвиз-транзит</span>
         </label>
         <button className="btn btn--go" type="submit" disabled={loading}>
           {loading ? 'Ищем…' : 'Найти'}

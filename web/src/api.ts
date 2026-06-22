@@ -12,11 +12,14 @@ export interface Segment {
   cabin?: string
 }
 
+export type VisaStatus = 'no_visa' | 'twov' | 'visa_required' | 'unknown'
+
 export interface Layover {
   airport: string
   durationNs: number // Go time.Duration marshals as int64 nanoseconds
   selfTransfer: boolean
   risk?: string
+  visaStatus?: VisaStatus
   transitNote?: string
 }
 
@@ -43,6 +46,7 @@ export interface SourceStat {
 export interface SearchResult {
   offers: Offer[]
   sources: SourceStat[]
+  visaDisclaimer?: string
 }
 
 export type StopsMode = '' | 'direct' | 'one' | 'one_plus'
@@ -59,6 +63,7 @@ export interface SearchParams {
   airlines?: string
   excludeAirlines?: string
   selfTransfer?: boolean
+  visaFreeTransit?: boolean
 }
 
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? '/api'
@@ -76,6 +81,7 @@ export async function search(p: SearchParams, signal?: AbortSignal): Promise<Sea
   if (p.airlines) q.set('airlines', p.airlines)
   if (p.excludeAirlines) q.set('exclude_airlines', p.excludeAirlines)
   if (p.selfTransfer === false) q.set('self_transfer', 'false')
+  if (p.visaFreeTransit) q.set('visa_free_transit', 'true')
 
   const res = await fetch(`${API_BASE}/search?${q.toString()}`, { signal })
   if (!res.ok) {

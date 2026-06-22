@@ -10,24 +10,28 @@ import (
 	"flightmeta/internal/offer"
 	"flightmeta/internal/rank"
 	"flightmeta/internal/sources"
+	"flightmeta/internal/visa"
 )
 
 // Orchestrator coordinates the concurrent fan-out across data sources.
 type Orchestrator struct {
 	sources       []sources.Adapter
 	sourceTimeout time.Duration
+	visa          *visa.Resolver // optional; enriches layovers with transit-visa info
 	log           *slog.Logger
 }
 
-// New builds an orchestrator over the given source adapters.
-func New(log *slog.Logger, sourceTimeout time.Duration, srcs ...sources.Adapter) *Orchestrator {
-	return &Orchestrator{sources: srcs, sourceTimeout: sourceTimeout, log: log}
+// New builds an orchestrator over the given source adapters. resolver may be
+// nil (no transit-visa enrichment).
+func New(log *slog.Logger, sourceTimeout time.Duration, resolver *visa.Resolver, srcs ...sources.Adapter) *Orchestrator {
+	return &Orchestrator{sources: srcs, sourceTimeout: sourceTimeout, visa: resolver, log: log}
 }
 
 // Result is the merged, ranked search response plus per-source diagnostics.
 type Result struct {
-	Offers  []offer.Offer `json:"offers"`
-	Sources []SourceStat  `json:"sources"`
+	Offers         []offer.Offer `json:"offers"`
+	Sources        []SourceStat  `json:"sources"`
+	VisaDisclaimer string        `json:"visaDisclaimer,omitempty"`
 }
 
 // SourceStat reports how each source performed (count, error, latency).
@@ -76,5 +80,13 @@ func (o *Orchestrator) Search(ctx context.Context, q sources.Query) Result {
 		all = append(all, p.offers...)
 	}
 
-	return Result{Offers: rank.Apply(all, q.Filters), Sources: stats}
+	// Transit-visa enrichment must run before ranking, since the
+	// OnlyVisaFreeTransit filter reads each layover's VisaStatus.
+	res := Result{Sources: stats}
+	if o.visa != nil {
+		o.visa.Enrich(all, q.Passport)
+		res.VisaDisclaimer = o.visa.Disclaimer()
+	}
+	res.Offers = rank.Apply(all, q.Filters)
+	return res
 }

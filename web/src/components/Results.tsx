@@ -22,6 +22,9 @@ export function Results({ result }: { result: SearchResult }) {
           <OfferCard key={o.id} offer={o} />
         ))}
       </div>
+      {result.visaDisclaimer && (
+        <p className="disclaimer">ℹ️ {result.visaDisclaimer} Время рейсов указано в UTC.</p>
+      )}
     </section>
   )
 }

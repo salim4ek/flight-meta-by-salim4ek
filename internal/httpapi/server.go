@@ -119,10 +119,11 @@ func parseQuery(r *http.Request) (sources.Query, error) {
 		Passport:    passport,
 		Currency:    strings.ToUpper(strings.TrimSpace(v.Get("currency"))),
 		Filters: sources.Filters{
-			Stops:             stops,
-			IncludeAirlines:   splitCSVUpper(v.Get("airlines")),
-			ExcludeAirlines:   splitCSVUpper(v.Get("exclude_airlines")),
-			AllowSelfTransfer: v.Get("self_transfer") != "false", // allowed by default
+			Stops:               stops,
+			IncludeAirlines:     splitCSVUpper(v.Get("airlines")),
+			ExcludeAirlines:     splitCSVUpper(v.Get("exclude_airlines")),
+			AllowSelfTransfer:   v.Get("self_transfer") != "false", // allowed by default
+			OnlyVisaFreeTransit: v.Get("visa_free_transit") == "true",
 		},
 	}, nil
 }

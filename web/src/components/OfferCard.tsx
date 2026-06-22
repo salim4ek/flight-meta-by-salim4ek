@@ -1,4 +1,4 @@
-import type { Offer } from '../api'
+import type { Offer, VisaStatus } from '../api'
 import {
   formatPrice,
   formatTimeUTC,
@@ -6,6 +6,21 @@ import {
   humanDurationMs,
   humanDurationNs,
 } from '../format'
+
+function visaBadge(status?: VisaStatus): { kind: string; label: string } | null {
+  switch (status) {
+    case 'no_visa':
+      return { kind: 'ok', label: 'Транзит без визы' }
+    case 'twov':
+      return { kind: 'twov', label: 'Безвиз-транзит (TWOV)' }
+    case 'visa_required':
+      return { kind: 'need', label: 'Нужна транзитная виза' }
+    case 'unknown':
+      return { kind: 'unknown', label: 'Виза: уточните' }
+    default:
+      return null
+  }
+}
 
 // Card layout follows established flight-search conventions (Google Flights /
 // Skyscanner): prominent price, a depart→arrive timeline with stop pills, and
@@ -17,6 +32,9 @@ export function OfferCard({ offer }: { offer: Offer }) {
   const stops = Math.max(0, segs.length - 1)
   const durMs = new Date(last.arriveUtc).getTime() - new Date(first.departUtc).getTime()
   const isSelf = offer.connection === 'self_transfer'
+  // Defense-in-depth: only follow http(s) deep links. Real partner links come
+  // from external sources later; never render javascript:/data: schemes.
+  const buyHref = /^https?:\/\//i.test(offer.deepLink) ? offer.deepLink : undefined
 
   return (
     <article className={`card${isSelf ? ' card--self' : ''}`}>
@@ -48,7 +66,9 @@ export function OfferCard({ offer }: { offer: Offer }) {
                 </span>
               ))}
             </div>
-            <div className="route__stops">{stops === 0 ? 'без пересадок' : 'UTC-время'}</div>
+            <div className="route__stops">
+              {stops === 0 ? 'без пересадок' : `${stops} пересадка(и)`}
+            </div>
           </div>
 
           <div className="route__end">
@@ -60,15 +80,20 @@ export function OfferCard({ offer }: { offer: Offer }) {
 
         {offer.layovers && offer.layovers.length > 0 && (
           <ul className="layovers">
-            {offer.layovers.map((l, i) => (
-              <li key={i} className="layover">
-                <span className="layover__air">{l.airport}</span>
-                <span className="layover__dur">стыковка {humanDurationNs(l.durationNs)}</span>
-                {l.selfTransfer && <span className="layover__tag">смена билета</span>}
-                {/* transitNote (visa) is populated in Phase 3 */}
-                {l.transitNote && <span className="layover__note">{l.transitNote}</span>}
-              </li>
-            ))}
+            {offer.layovers.map((l, i) => {
+              const v = visaBadge(l.visaStatus)
+              return (
+                <li key={i} className="layover">
+                  <div className="layover__top">
+                    <span className="layover__air">{l.airport}</span>
+                    <span className="layover__dur">стыковка {humanDurationNs(l.durationNs)}</span>
+                    {l.selfTransfer && <span className="layover__tag">смена билета</span>}
+                    {v && <span className={`visa visa--${v.kind}`}>{v.label}</span>}
+                  </div>
+                  {l.transitNote && <div className="layover__note">{l.transitNote}</div>}
+                </li>
+              )
+            })}
           </ul>
         )}
 
@@ -82,9 +107,15 @@ export function OfferCard({ offer }: { offer: Offer }) {
 
       <div className="card__buy">
         <div className="price">{formatPrice(offer.priceMinor, offer.currency)}</div>
-        <a className="btn btn--go" href={offer.deepLink} target="_blank" rel="noopener noreferrer">
-          Купить
-        </a>
+        {buyHref ? (
+          <a className="btn btn--go" href={buyHref} target="_blank" rel="noopener noreferrer">
+            Купить
+          </a>
+        ) : (
+          <span className="btn btn--go" aria-disabled="true" style={{ opacity: 0.6 }}>
+            Ссылка недоступна
+          </span>
+        )}
         <div className="card__source">источник: {offer.source}</div>
       </div>
     </article>
